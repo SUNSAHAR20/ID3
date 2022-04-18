@@ -9,8 +9,8 @@ from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import train_test_split
 
 
-def entropy(class1=0, class2=0, class3=0, class4=0):
-    class_list = [class1, class2, class3, class4]
+def entropy(class1=0, class2=0):
+    class_list = [class1, class2]
     final_entropy = 0
     for c in class_list:
         if c != 0:
@@ -70,14 +70,15 @@ class id3_tree_builder(estimator, mix):
 
     @classmethod
     def pred_recur(cls, tupl, t):
-        if type(t) is int:
-            return "NaN"  # assigns NaN when the path is missing for a given test case
-        elif type(t) is not dict:
+        #if type(t) is int:
+            #return "NaN"  # assigns NaN when the path is missing for a given test case
+        if type(t) is not dict:
             return t
-        index = {'buying': 1, 'maint': 2, 'doors': 3, 'persons': 4, 'lug_boot': 5, 'safety': 6}
+        index = {'diagnosis': 1, 'radius': 2, 'texture': 3, 'perimeter': 4, 'area': 5, 'smoothness': 6, 'compactness': 7, 'concavity': 8, 'concave points': 9}
         for i in t.keys():
             if i in index.keys():
-                s = t[i].get(tupl[index[i]])
+                td = tupl[index[i]]
+                s = t[i].get(tupl[index[i]], 0)
                 r = cls.pred_recur(tupl, t[i].get(tupl[index[i]], 0))
         return r
 
@@ -100,12 +101,29 @@ if __name__ == '__main__':
     avg_acc = 0.0
     final_acc_arr = []
     std_dev = 0.0
-    header_row = ["buying", "maint", "doors", "persons", "lug_boot", "safety", "labels"]# defining the table header info
-    df = pd.read_csv(r'C:\Users\Soorya\Desktop\CS6735-MachineLearning\Prog Project\car.data', delimiter=",", names=header_row) # importing the csv as a dataframe
+    header_row = ["id","diagnosis","radius","texture","perimeter","area","smoothness","compactness","concavity","concave points", "labels"]# defining the table header info
+    cancer_df = pd.read_csv(r'C:\Users\Soorya\Desktop\CS6735-MachineLearning\Prog Project\breast-cancer-wisconsin.data', delimiter=",", names=header_row) # importing the csv as a dataframe
+
+    cancer_df["smoothness"].replace('?', '0', inplace = True)
+    cancer_df['smoothness'] = cancer_df['smoothness'].astype(int)
+    average = cancer_df["smoothness"].mean()
+    cancer_df["smoothness"].replace('?', average, inplace = True)
+    
+    cancer_df['diagnosis'] = cancer_df['diagnosis'].astype(int)
+    cancer_df['radius'] = cancer_df['radius'].astype(int)
+    cancer_df['texture'] = cancer_df['texture'].astype(int)
+    cancer_df['perimeter'] = cancer_df['perimeter'].astype(int)
+    cancer_df['area'] = cancer_df['area'].astype(int)
+    cancer_df['smoothness'] = cancer_df['smoothness'].astype(int)
+    cancer_df['compactness'] = cancer_df['compactness'].astype(int)
+    cancer_df['concavity'] = cancer_df['concavity'].astype(int)
+    cancer_df['concave points'] = cancer_df['concave points'].astype(int)
+    cancer_df['labels'] = cancer_df['labels'].astype(int)
+    
     while (occur < 10):
-        df = df.sample(frac=1)
+        df = cancer_df.sample(frac=1)
         y = df["labels"]
-        X = df.drop(["labels"], axis=1)
+        X = df.drop(["id", "labels"], axis=1)
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.45)
         # entropy of the entire training data set (y)
         entro_set = entropy(*[i for i in Counter(y_train).values()])

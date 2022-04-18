@@ -9,13 +9,14 @@ from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import train_test_split
 
 
-def entropy(class1=0, class2=0, class3=0, class4=0):
-    class_list = [class1, class2, class3, class4]
+def entropy(class1=0, class2=0, class3=0, class4=0, class5=0, class6=0, class7=0, class8=0):
+    class_list = [class1, class2, class3, class4, class5, class6, class7, class8]
     final_entropy = 0
     for c in class_list:
         if c != 0:
-            final_entropy += -((c/sum(class_list))*log(c/sum(class_list), 4))
+            final_entropy += -((c / sum(class_list)) * log(c / sum(class_list), 4))
     return final_entropy
+
 
 # This is our main class
 class id3_tree_builder(estimator, mix):
@@ -70,14 +71,15 @@ class id3_tree_builder(estimator, mix):
 
     @classmethod
     def pred_recur(cls, tupl, t):
-        if type(t) is int:
-            return "NaN"  # assigns NaN when the path is missing for a given test case
-        elif type(t) is not dict:
+        # if type(t) is int:
+        # return "NaN"  # assigns NaN when the path is missing for a given test case
+        if type(t) is not dict:
             return t
-        index = {'buying': 1, 'maint': 2, 'doors': 3, 'persons': 4, 'lug_boot': 5, 'safety': 6}
+        index = {'mcg': 1, 'gvh': 2, 'lip': 3, 'chg': 4, 'aac': 5, 'alm1': 6, 'alm2': 7}
         for i in t.keys():
             if i in index.keys():
-                s = t[i].get(tupl[index[i]])
+                td = tupl[index[i]]
+                s = t[i].get(tupl[index[i]], 0)
                 r = cls.pred_recur(tupl, t[i].get(tupl[index[i]], 0))
         return r
 
@@ -95,30 +97,46 @@ class id3_tree_builder(estimator, mix):
         id3_tree_builder.recursion(dataset, self.tree_, class_col)
         return self
 
+
 if __name__ == '__main__':
-    occur = 0 # counter for cross validations performed
+    occur = 0  # counter for cross validations performed
     avg_acc = 0.0
     final_acc_arr = []
     std_dev = 0.0
-    header_row = ["buying", "maint", "doors", "persons", "lug_boot", "safety", "labels"]# defining the table header info
-    df = pd.read_csv(r'C:\Users\Soorya\Desktop\CS6735-MachineLearning\Prog Project\car.data', delimiter=",", names=header_row) # importing the csv as a dataframe
+    header_row = ["names", "mcg","gvh","lip","chg","aac","alm1","alm2","labels"]  # defining the table header info
+    ecoli_df = pd.read_csv(r'C:\Users\Soorya\Desktop\CS6735-MachineLearning\Prog Project\ecoli.data',
+                            delim_whitespace=True, delimiter=",", names=header_row)  # importing the csv as a dataframe
+
+    ecoli_df = ecoli_df.drop("names", axis="columns")
+    ecoli_df["labels"].replace(["cp", "im", "imU", "imS", "imL", "om", "omL", "pp"], [
+        0, 1, 2, 3, 4, 5, 6, 7], inplace=True)
+
+    ecoli_df['mcg'] = ecoli_df['mcg'].astype(float)
+    ecoli_df['gvh'] = ecoli_df['gvh'].astype(float)
+    ecoli_df['lip'] = ecoli_df['lip'].astype(float)
+    ecoli_df['chg'] = ecoli_df['chg'].astype(float)
+    ecoli_df['aac'] = ecoli_df['aac'].astype(float)
+    ecoli_df['alm1'] = ecoli_df['alm1'].astype(float)
+    ecoli_df['alm2'] = ecoli_df['alm2'].astype(float)
+    ecoli_df['labels'] = ecoli_df['labels'].astype(int)
+    
     while (occur < 10):
-        df = df.sample(frac=1)
+        df = ecoli_df.sample(frac=1)
         y = df["labels"]
         X = df.drop(["labels"], axis=1)
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.45)
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20)
         # entropy of the entire training data set (y)
         entro_set = entropy(*[i for i in Counter(y_train).values()])
         print("The total entropy of the training set is {}".format(entro_set))
-        model = id3_tree_builder() # creating a instance for the decision_tree class
-        model.fit(X_train, y_train) # calling the fit method to create the tre
-        accuracy_score(y_test, model.predict(X_test)) # the accuracy score under train-test-split
-        acc_arr = cross_val_score(model, X, y, cv=5, scoring='accuracy')
-        print("Accuracy Scores per ", occur+1, "Iteration is ", acc_arr)
+        model = id3_tree_builder()  # creating a instance for the decision_tree class
+        model.fit(X_train, y_train)  # calling the fit method to create the tre
+        accuracy_score(y_test, model.predict(X_test))  # the accuracy score under train-test-split
+        acc_arr = cross_val_score(model, X, y, cv=2, scoring='accuracy')
+        print("Accuracy Scores per ", occur + 1, "Iteration is ", acc_arr)
         for i in range(0, len(acc_arr)):
             final_acc_arr.append(acc_arr[i])
         occur += 1
-    avg_acc = np.sum(final_acc_arr)/len(final_acc_arr)
+    avg_acc = np.sum(final_acc_arr) / len(final_acc_arr)
     std_dev = np.std(final_acc_arr)
     print("Average Accuracy:", avg_acc)
-    print("Standard Deviation: ",std_dev)
+    print("Standard Deviation: ", std_dev)
